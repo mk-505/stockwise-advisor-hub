@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/Layout/PageLayout';
@@ -21,19 +20,19 @@ const trendData = [
   { 
     title: 'Tech Sector Outlook', 
     description: 'Technology stocks showing strong momentum with AI advancements.', 
-    type: 'positive', 
+    type: 'positive' as const, 
     value: '+2.4% MTD' 
   },
   { 
     title: 'Consumer Staples', 
     description: 'Defensive stocks under pressure as consumers reduce spending.', 
-    type: 'negative', 
+    type: 'negative' as const, 
     value: '-1.1% MTD' 
   },
   { 
     title: 'Market Volatility', 
     description: 'VIX index indicates increased market uncertainty ahead.', 
-    type: 'neutral', 
+    type: 'neutral' as const, 
     value: '19.32' 
   },
 ];
