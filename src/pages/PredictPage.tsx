@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import PageLayout from '@/components/Layout/PageLayout';
@@ -123,21 +122,21 @@ const PredictPage = () => {
     
     if (currentSymbol === 'AAPL') {
       return [
-        { title: 'Strong Buy Signal', description: 'Technical indicators suggest bullish momentum.', type: 'positive', value: '87% Confidence' },
-        { title: 'Recent Performance', description: 'Outperforming sector by 3.2% in the last quarter.', type: 'positive', value: '+12.4% QTD' },
-        { title: 'Volatility', description: 'Stock shows lower volatility than market average.', type: 'neutral', value: '0.89 Beta' }
+        { title: 'Strong Buy Signal', description: 'Technical indicators suggest bullish momentum.', type: 'positive' as const, value: '87% Confidence' },
+        { title: 'Recent Performance', description: 'Outperforming sector by 3.2% in the last quarter.', type: 'positive' as const, value: '+12.4% QTD' },
+        { title: 'Volatility', description: 'Stock shows lower volatility than market average.', type: 'neutral' as const, value: '0.89 Beta' }
       ];
     } else if (currentSymbol === 'TSLA') {
       return [
-        { title: 'Hold Recommendation', description: 'Mixed signals with recent price volatility.', type: 'neutral', value: '52% Confidence' },
-        { title: 'Technical Resistance', description: 'Approaching key resistance level at $260.', type: 'negative', value: 'Caution' },
-        { title: 'Volume Analysis', description: 'Trading volume increasing on down days.', type: 'negative', value: '+32% Volume' }
+        { title: 'Hold Recommendation', description: 'Mixed signals with recent price volatility.', type: 'neutral' as const, value: '52% Confidence' },
+        { title: 'Technical Resistance', description: 'Approaching key resistance level at $260.', type: 'negative' as const, value: 'Caution' },
+        { title: 'Volume Analysis', description: 'Trading volume increasing on down days.', type: 'negative' as const, value: '+32% Volume' }
       ];
     } else {
       return [
-        { title: 'Moderate Buy', description: 'Positive outlook with some caution advised.', type: 'positive', value: '68% Confidence' },
-        { title: 'Price Momentum', description: 'Positive price action in recent trading sessions.', type: 'positive', value: 'Bullish' },
-        { title: 'Market Correlation', description: 'Stock following broader market trends.', type: 'neutral', value: '0.95 Correlation' }
+        { title: 'Moderate Buy', description: 'Positive outlook with some caution advised.', type: 'positive' as const, value: '68% Confidence' },
+        { title: 'Price Momentum', description: 'Positive price action in recent trading sessions.', type: 'positive' as const, value: 'Bullish' },
+        { title: 'Market Correlation', description: 'Stock following broader market trends.', type: 'neutral' as const, value: '0.95 Correlation' }
       ];
     }
   };
