@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import PageLayout from '@/components/Layout/PageLayout';
 import StockCard from '@/components/StockCard';
 import TrendCard from '@/components/TrendCard';
 import { LineChart, ArrowRightCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// Mock data
-const popularStocks = [
-  { symbol: 'AAPL', name: 'Apple Inc.', price: 173.58, change: 0.89, data: [170, 168, 166, 169, 170, 173, 174] },
-  { symbol: 'MSFT', name: 'Microsoft Corp.', price: 410.34, change: 1.24, data: [400, 404, 405, 402, 406, 408, 410] },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 164.76, change: -0.45, data: [167, 166, 165, 166, 164, 165, 164] },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 182.41, change: 0.67, data: [178, 180, 179, 181, 182, 181, 182] },
-  { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.42, change: -1.34, data: [254, 253, 251, 249, 250, 247, 248] },
-  { symbol: 'META', name: 'Meta Platforms', price: 508.76, change: 2.41, data: [492, 496, 500, 505, 506, 507, 509] },
-];
+import { stocksList } from '@/config/stocks';
+import { fetchStockQuotes, type StockQuote } from '@/lib/stockApi';
 
 const trendData = [
   { 
@@ -39,12 +32,21 @@ const trendData = [
 
 const Index = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
   
+  const { data: stockQuotes, isLoading } = useQuery({
+    queryKey: ['stockQuotes'],
+    queryFn: () => fetchStockQuotes(stocksList.map(stock => stock.symbol)),
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  const getStockName = (symbol: string) => {
+    return stocksList.find(stock => stock.symbol === symbol)?.name || symbol;
+  };
+
   const handleStockClick = (symbol: string) => {
     navigate(`/predict?symbol=${symbol}`);
   };
-  
+
   return (
     <PageLayout>
       <div className="mb-6">
@@ -92,11 +94,16 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {popularStocks.map((stock) => (
+          {isLoading ? (
+            <div className="col-span-full text-center p-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading stock data...</p>
+            </div>
+          ) : stockQuotes?.slice(0, 6).map((stock: StockQuote) => (
             <StockCard
               key={stock.symbol}
               symbol={stock.symbol}
-              name={stock.name}
+              name={getStockName(stock.symbol)}
               price={stock.price}
               change={stock.change}
               data={stock.data}
