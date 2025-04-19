@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { getChatResponse } from '@/lib/aiChat';
 
 interface Message {
   id: string;
@@ -48,34 +48,23 @@ const ChatInterface: React.FC = () => {
     setInput('');
     setIsLoading(true);
     
-    // Simulate API call - in real app, this would call your GPT-powered backend
-    setTimeout(() => {
-      // Mock responses based on user input
-      let responseContent = '';
-      const lowerInput = input.toLowerCase();
-      
-      if (lowerInput.includes('aapl') || lowerInput.includes('apple')) {
-        responseContent = "Based on recent data, Apple (AAPL) has shown strong performance with positive analyst ratings. Their latest product launches and services growth are contributing to a bullish outlook. Consider monitoring their upcoming earnings report for further guidance.";
-      } else if (lowerInput.includes('tsla') || lowerInput.includes('tesla')) {
-        responseContent = "Tesla (TSLA) has been experiencing volatility due to production challenges and increased competition. However, their innovation in EV technology and energy solutions positions them well for long-term growth. Risk-tolerant investors might see current prices as an opportunity.";
-      } else if (lowerInput.includes('msft') || lowerInput.includes('microsoft')) {
-        responseContent = "Microsoft (MSFT) continues to show strong growth driven by cloud services and AI investments. Their diversified revenue streams and strategic acquisitions create a stable outlook. Many analysts maintain buy ratings with expectations of continued steady growth.";
-      } else if (lowerInput.includes('market') || lowerInput.includes('trend')) {
-        responseContent = "Current market trends indicate cautious optimism amid inflation concerns and interest rate adjustments. Technology and healthcare sectors are showing resilience, while consumer discretionary faces challenges. Consider diversification and maintaining cash reserves for potential opportunities.";
-      } else {
-        responseContent = "Thank you for your question. While I don't have specific data on that particular query, I recommend considering factors like company fundamentals, industry trends, and macroeconomic conditions in your investment decisions. Would you like me to provide general guidance on investment strategies instead?";
-      }
+    try {
+      const aiResponse = await getChatResponse(input);
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: responseContent,
+        content: aiResponse,
         isUser: false,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      toast.error('Failed to get response. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
