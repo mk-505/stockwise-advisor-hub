@@ -14,7 +14,7 @@ Stay neutral, avoid offering legal or overly speculative advice, and always enco
 export async function getChatResponse(userMessage: string): Promise<string> {
   try {
     const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.1',
+      model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
       inputs: `<s>[INST] ${SYSTEM_PROMPT}
 
 User: ${userMessage} [/INST]`,
