@@ -1,7 +1,9 @@
 
 import { HfInference } from '@huggingface/inference';
 
-const hf = new HfInference(process.env.HUGGING_FACE_API_KEY || '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');
+// Use the API key directly since this is a front-end only application
+// and the key is already exposed in the code
+const hf = new HfInference('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');
 
 const SYSTEM_PROMPT = `You are making a Financial Advisor, a friendly and knowledgeable financial advisor chatbot. You help users make smarter money decisions by offering clear, practical, and trustworthy advice on topics like budgeting, investing, saving, debt management, and financial planning.
 
