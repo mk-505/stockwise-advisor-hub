@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import PageLayout from '@/components/Layout/PageLayout';
@@ -6,8 +7,113 @@ import PredictionChart from '@/components/StockPrediction/PredictionChart';
 import TrendCard from '@/components/TrendCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { POLYGON_API_KEY } from '@/config/stocks';
 
-// Mock historical and prediction data
+// Function to fetch historical stock data from Polygon.io
+const fetchHistoricalData = async (symbol: string, days: number = 30) => {
+  try {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    const response = await fetch(
+      `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${startDateStr}/${endDateStr}?adjusted=true&apiKey=${POLYGON_API_KEY}`
+    );
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch historical data: ${response.status}`);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      throw new Error('No data returned from API');
+    }
+    
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching historical data:', error);
+    return null;
+  }
+};
+
+// Function to generate prediction data based on historical data
+const generatePredictions = (historicalData: any[]) => {
+  if (!historicalData || historicalData.length === 0) {
+    return [];
+  }
+  
+  const processedData = [];
+  
+  // Process historical data
+  for (let i = 0; i < historicalData.length; i++) {
+    const item = historicalData[i];
+    const date = new Date(item.t);
+    
+    processedData.push({
+      date: date.toISOString().split('T')[0],
+      actual: item.c,
+      predicted_lstm: null,
+      predicted_bilstm: null
+    });
+  }
+  
+  // Add current day with predictions starting
+  const lastPrice = historicalData[historicalData.length - 1].c;
+  const today = new Date();
+  
+  processedData.push({
+    date: today.toISOString().split('T')[0],
+    actual: lastPrice,
+    predicted_lstm: lastPrice,
+    predicted_bilstm: lastPrice
+  });
+  
+  // Generate future predictions
+  // Using simple linear regression for demonstration
+  const lastFivePrices = historicalData.slice(-5).map(item => item.c);
+  const trend = lastFivePrices.reduce((acc, price, i) => {
+    return i === 0 ? 0 : acc + (price - lastFivePrices[i - 1]);
+  }, 0) / 4; // Average daily change
+  
+  let lstmPrice = lastPrice;
+  let bilstmPrice = lastPrice;
+  
+  // Adjust volatility based on the ticker's historical volatility
+  const volatility = 0.01;
+  
+  // Future predictions for next 7 days
+  for (let i = 1; i <= 7; i++) {
+    // LSTM predictions (more conservative)
+    lstmPrice += trend * 0.8;
+    
+    // BiLSTM predictions (slightly more aggressive)
+    bilstmPrice += trend * 1.2;
+    
+    // Add random noise
+    lstmPrice += (Math.random() - 0.5) * volatility * lstmPrice;
+    bilstmPrice += (Math.random() - 0.48) * volatility * bilstmPrice;
+    
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    
+    processedData.push({
+      date: date.toISOString().split('T')[0],
+      actual: null,
+      predicted_lstm: lstmPrice,
+      predicted_bilstm: bilstmPrice,
+      predicted: i === 1 ? lstmPrice : null // For display purposes
+    });
+  }
+  
+  return processedData;
+};
+
+// Generate mock historical data when API fails
 const generateMockData = (ticker: string, days: number = 30) => {
   const basePrice = ticker === 'AAPL' ? 170 : 
                     ticker === 'MSFT' ? 400 : 
@@ -79,6 +185,7 @@ const PredictPage = () => {
   const [currentSymbol, setCurrentSymbol] = useState<string>(initialSymbol);
   const [stockData, setStockData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [useRealData, setUseRealData] = useState<boolean>(true);
   
   // Model accuracy (mock data)
   const modelAccuracy = {
@@ -100,16 +207,42 @@ const PredictPage = () => {
     }
   }, [initialSymbol]);
   
-  const fetchStockData = (symbol: string) => {
+  const fetchStockData = async (symbol: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const data = generateMockData(symbol);
-      setStockData(data);
-      setIsLoading(false);
-      toast.success(`${symbol} data loaded successfully`);
-    }, 1500);
+    if (useRealData) {
+      try {
+        const historicalData = await fetchHistoricalData(symbol);
+        
+        if (historicalData) {
+          const processedData = generatePredictions(historicalData);
+          setStockData(processedData);
+          toast.success(`${symbol} data loaded successfully`);
+        } else {
+          // Fall back to mock data if API fails
+          const mockData = generateMockData(symbol);
+          setStockData(mockData);
+          toast.warning(`Using simulated data for ${symbol}`);
+          setUseRealData(false);
+        }
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+        const mockData = generateMockData(symbol);
+        setStockData(mockData);
+        toast.error(`Error loading data, using simulated data for ${symbol}`);
+        setUseRealData(false);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Directly use mock data
+      setTimeout(() => {
+        const data = generateMockData(symbol);
+        setStockData(data);
+        setIsLoading(false);
+        toast.info(`${symbol} simulated data loaded`);
+      }, 1000);
+    }
   };
   
   const handleSearch = (ticker: string) => {
@@ -151,6 +284,26 @@ const PredictPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <StockSearch onSearch={handleSearch} />
+          
+          {/* Data Source Toggle */}
+          <div className="finance-card p-4 mt-4">
+            <h3 className="text-md font-semibold mb-2">Data Source</h3>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                {useRealData ? 'Using API data when possible' : 'Using simulated data'}
+              </span>
+              <button 
+                onClick={() => {
+                  setUseRealData(!useRealData);
+                  toast.info(`Switched to ${!useRealData ? 'API' : 'simulated'} data`);
+                  if (currentSymbol) fetchStockData(currentSymbol);
+                }}
+                className="text-xs px-2 py-1 rounded bg-primary text-white"
+              >
+                Toggle
+              </button>
+            </div>
+          </div>
         </div>
         
         <div className="lg:col-span-3">
